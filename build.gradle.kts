@@ -22,7 +22,7 @@ repositories {
 intellij {
     version.set("2023.2")
     type.set("IU") // Target IDE Platform
-
+    pluginName.set(properties("pluginName"))
     plugins.set(listOf("DatabaseTools","JavaScript"))
 }
 
@@ -30,18 +30,21 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = JavaVersion.VERSION_17.majorVersion
+}
+
 
 tasks {
-    // Set the JVM compatibility versions
-    withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
-    }
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
-    }
 
     patchPluginXml {
+        version.set(version)
         sinceBuild.set("222")
         untilBuild.set("232.*")
     }
@@ -52,9 +55,10 @@ tasks {
         password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
     }
 
-    runIde{
-        ideDir.set(file(properties("ideLocation")))
+    runIde {
+        autoReloadPlugins.set(true)
     }
+
 
     publishPlugin {
         dependsOn("patchChangelog")
