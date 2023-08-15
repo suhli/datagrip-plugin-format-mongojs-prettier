@@ -53,7 +53,7 @@ tasks {
     }
 
     runIde{
-        ideDir.set(file("/Users/lishuhang/Library/Application Support/JetBrains/Toolbox/apps/datagrip/ch-0/232.8660.111/DataGrip.app/Contents"))
+        ideDir.set(file(properties("ideLocation")))
     }
 
     publishPlugin {
