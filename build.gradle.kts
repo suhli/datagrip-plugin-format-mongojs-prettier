@@ -1,11 +1,9 @@
-import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "1.8.22"
     id("org.jetbrains.intellij") version "1.14.1"
-    id("org.jetbrains.changelog") version "2.0.0"
 }
 fun properties(key: String) = project.findProperty(key).toString()
 
@@ -36,10 +34,6 @@ compileKotlin.kotlinOptions {
     jvmTarget = JavaVersion.VERSION_17.majorVersion
 }
 
-changelog {
-    version.set(properties("pluginVersion"))
-    groups.set(emptyList())
-}
 
 tasks {
     wrapper {
@@ -63,7 +57,6 @@ tasks {
 
 
     publishPlugin {
-        dependsOn("patchChangelog")
         token.set(System.getenv("PUBLISH_TOKEN"))
         // pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
         // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
