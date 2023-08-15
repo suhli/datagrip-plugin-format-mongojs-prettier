@@ -1,7 +1,7 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
-    <id>com.suhli.mongo-shell-format</id>
+    <id>com.suhli.datagrip-plugin-format-mongojs-prettier</id>
 
     <!-- Public plugin name should be written in Title Case.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
@@ -14,7 +14,16 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    a plugin that format mongo shell in datagrip console/script editor
+    datagrip plugin to format mongojs in playground/console using prettier
+
+    # Features
+
+    * format mongojs
+
+    # Requirement
+
+    [prettier](https://prettier.io/) install globally
+    > npm install -g prettier
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
@@ -26,7 +35,7 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <postFormatProcessor implementation="com.suhli.mongoshellformat.Format"/>
+        <postFormatProcessor implementation="com.suhli.Format"/>
         <notificationGroup displayType="BALLOON" id="MongoJS Format"/>
     </extensions>
 </idea-plugin>

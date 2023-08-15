@@ -1,4 +1,4 @@
-package com.suhli.mongoshellformat
+package com.suhli
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.database.dialects.base.startOffset
