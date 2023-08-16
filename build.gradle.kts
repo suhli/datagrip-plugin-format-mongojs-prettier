@@ -9,7 +9,9 @@ fun properties(key: String) = project.findProperty(key).toString()
 
 group = "com.suhli"
 version = properties("pluginVersion")
-
+dependencies {
+    implementation(kotlin("reflect"))
+}
 repositories {
     mavenCentral()
     maven(url = "https://www.jetbrains.com/intellij-repository/releases")

@@ -14,22 +14,22 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-    datagrip plugin to format mongojs in playground/console using prettier
+    <div>datagrip plugin to format mongojs in playground/console base on <a href="https://plugins.jetbrains.com/plugin/10456-prettier">prettier plugin</a></div>
 
-    # Features
+    <h1> Features </h1>
 
-    * format mongojs
+    <div>* format mongojs</div>
 
-    # Requirement
+    <h1> Requirement </h1>
 
-    [prettier](https://prettier.io/) install globally
-    > npm install -g prettier
+    <div><a href="https://plugins.jetbrains.com/plugin/10456-prettier">prettier plugin</a></div>
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.database</depends>
     <depends>JavaScript</depends>
+    <depends>intellij.prettierJS</depends>
     <depends>com.intellij.modules.platform</depends>
 
     <!-- Extension points defined by the plugin.

@@ -1,4 +1,4 @@
-datagrip plugin to format mongojs in playground/console using prettier
+datagrip plugin to format mongojs in playground/console base on [prettier plugin](https://plugins.jetbrains.com/plugin/10456-prettier)
 
 # Features
 
@@ -6,5 +6,4 @@ datagrip plugin to format mongojs in playground/console using prettier
 
 # Requirement
 
-[prettier](https://prettier.io/) install globally
-> npm install -g prettier
+[prettier plugin](https://plugins.jetbrains.com/plugin/10456-prettier)
