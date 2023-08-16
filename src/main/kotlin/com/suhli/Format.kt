@@ -29,6 +29,13 @@ inline fun <reified T> T.callPrivateFunc(name: String, vararg args: Any?): Any? 
         ?.apply { isAccessible = true }
         ?.call(this, *args)
 
+
+inline fun <reified T> T.callPublic(name: String, vararg args: Any?): Any? =
+    T::class
+        .declaredMemberFunctions
+        .firstOrNull { it.name == name }
+        ?.call(this, *args)
+
 class FormatRequest(val range: TextRange, val text: String) {
     var result = ""
 }
