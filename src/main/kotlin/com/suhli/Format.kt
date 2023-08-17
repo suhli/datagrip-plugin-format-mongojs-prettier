@@ -9,14 +9,19 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.runBackgroundableTask
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.TextRange
 import com.intellij.prettierjs.PrettierConfiguration
 import com.intellij.prettierjs.PrettierLanguageService
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.codeStyle.CodeStyleManager
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.impl.source.codeStyle.PostFormatProcessor
 import com.intellij.psi.util.PsiEditorUtil
+import com.intellij.psi.util.elementType
+import com.intellij.sql.dialects.SqlLanguageDialect
 import java.io.File
 import java.io.FileWriter
 import kotlin.reflect.full.declaredMemberFunctions
@@ -30,13 +35,12 @@ inline fun <reified T> T.callPrivateFunc(name: String, vararg args: Any?): Any? 
         ?.call(this, *args)
 
 
-inline fun <reified T> T.callPublic(name: String, vararg args: Any?): Any? =
-    T::class
-        .declaredMemberFunctions
-        .firstOrNull { it.name == name }
-        ?.call(this, *args)
+enum class BlockType {
+    JS,
+    SQL
+}
 
-class FormatRequest(val range: TextRange, val text: String) {
+class FormatRequest(val range: TextRange, val text: String, val type: BlockType) {
     var result = ""
 }
 
@@ -54,7 +58,6 @@ class Format : PostFormatProcessor {
     companion object {
         val Log = Logger.getInstance(PostFormatProcessor::class.toString())
     }
-
 
     override fun processElement(source: PsiElement, settings: CodeStyleSettings): PsiElement {
         if (!source.language.id.startsWith("MongoJS")) {
@@ -83,49 +86,67 @@ class Format : PostFormatProcessor {
 
     private fun format(source: PsiFile) {
         val editor = PsiEditorUtil.findEditor(source) ?: return
-        val requests = source
-            .children
-            .filterIsInstance<JSExpressionStatement>()
-            .sortedByDescending {
-                it.startOffset
-            }
-            .map { FormatRequest(it.textRange, it.text) }
         val project = source.project
         val prettierContext = getPrettierContext(source)
         if (!prettierContext.isEnable()) {
             val notification = NotificationGroupManager.getInstance().getNotificationGroup("MongoJS Format")
                 .createNotification("Prettier disabled!", NotificationType.ERROR)
                 .addAction(OpenPrettierConfigAction())
-            notification.notify(source.project)
+            notification.notify(project)
             return
         }
+        val requests = source
+            .children
+            .filter {
+                it is JSExpressionStatement || it.elementType?.toString()?.equals("JS:SQL_SOURCE") ?: false
+            }
+            .sortedByDescending {
+                it.startOffset
+            }
+            .map {
+                FormatRequest(it.textRange, it.text, if (it is JSExpressionStatement) BlockType.JS else BlockType.SQL)
+            }
         val tempFile = File.createTempFile("format", ".js", null)
+        //EDT write error
         runBackgroundableTask("MongoJS Format") {
             for (child in requests) {
-                writeFile(tempFile, child.text)
-                val awaitFuture = JSLanguageServiceUtil.awaitFuture(
-                    prettierContext.service.format(
-                        tempFile.path,
-                        null,
-                        child.text,
-                        prettierContext.nodePackage,
-                        child.range
-                    ),
-                    2000
-                ) ?: continue
-                if (awaitFuture.unsupported) {
-                    Log.info("error format unsupported:${tempFile.path}")
-                    continue
+                //mongo shell
+                if (child.type.equals(BlockType.JS)) {
+                    writeFile(tempFile, child.text)
+                    val awaitFuture = JSLanguageServiceUtil.awaitFuture(
+                        prettierContext.service.format(
+                            tempFile.path,
+                            null,
+                            child.text,
+                            prettierContext.nodePackage,
+                            child.range
+                        ),
+                        2000
+                    ) ?: continue
+                    if (awaitFuture.unsupported) {
+                        Log.info("error format unsupported:${tempFile.path}")
+                        continue
+                    }
+                    if (awaitFuture.error != null) {
+                        Log.info("error format:${awaitFuture.error}")
+                        continue
+                    }
+                    val result = awaitFuture.result
+                    if (result.isNotBlank()) {
+                        WriteCommandAction.runWriteCommandAction(project, Computable {
+                            editor.document.replaceString(child.range.startOffset, child.range.endOffset, result)
+                        })
+                    }
                 }
-                if (awaitFuture.error != null) {
-                    Log.info("error format:${awaitFuture.error}")
-                    continue
-                }
-                child.result = awaitFuture.result
-            }
-            WriteCommandAction.runWriteCommandAction(project) {
-                for (request in requests.filter { it.result.isNotBlank() }) {
-                    editor.document.replaceString(request.range.startOffset, request.range.endOffset, request.result)
+                //mongo sql
+                else {
+                    WriteCommandAction.runWriteCommandAction(project, Computable {
+                        val language = SqlLanguageDialect.getGenericDialect()
+                        val file = PsiFileFactory.getInstance(project).createFileFromText(language, child.text)
+                        CodeStyleManager.getInstance(project).reformat(file)
+                        editor.document.replaceString(child.range.startOffset, child.range.endOffset, file.text)
+                        null
+                    })
                 }
             }
             it.fraction = 1.0
